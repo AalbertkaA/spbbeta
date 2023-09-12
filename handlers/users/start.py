@@ -1,5 +1,4 @@
 from aiogram import types
-
 from keyboards.default import keyboard_menu
 from loader import dp
 from filters import IsAdmin
@@ -11,15 +10,13 @@ from filters import IsAdmin
 
 
 @dp.message_handler(IsAdmin(), commands=['start'])
-async def command_start(message: types.Message) -> None:
-    print(message.chat.id)
+async def command_start_admin(message: types.Message) -> None:
     await message.answer(f'Здравствуйте, {message.from_user.full_name},  вы попали в админ панель!',
                          reply_markup=keyboard_menu.admin)
 
 
-@dp.message_handler(commands=['start'])
-async def command_strt(message: types.Message) -> None:
-    #print(message.chat.id)
+@dp.message_handler(commands='start')
+async def command_start(message: types.Message) -> None:
     exists = await user_exists(message.from_user.id)
     if not exists:
         await message.answer(f'Приветсвую!👋 \n'
@@ -28,3 +25,9 @@ async def command_strt(message: types.Message) -> None:
                              parse_mode="HTML")
     else:
         await message.answer('Воспользуйтесь кнопками ниже', reply_markup=keyboard_menu.main)
+
+
+@dp.message_handler(commands='chatid')
+async def send_chatid(message: types.Message) -> None:
+    await message.answer(message.chat.id)
+

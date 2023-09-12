@@ -1,10 +1,16 @@
 from aiogram import types
-
 from keyboards.inline import inline_kb_menu
 from loader import dp, bot
 from states.state import Registration_onTour
 from utils.db_api.db_asyncpg import *
 from aiogram.dispatcher import FSMContext
+
+
+async def try_delete_call(call: types.CallbackQuery):
+    try:
+        await call.message.delete()
+    except:
+        pass
 
 
 async def edit_call(callback, text, markup):
@@ -61,15 +67,14 @@ async def go_bck(callback: types.CallbackQuery):
 async def go_bk(callback: types.CallbackQuery):
     chat_id = callback.message.chat.id
     message_id = callback.message.message_id
-    #print(callback.data)
     tour_id = int(callback.data.split("/")[1])
     result = await tour_inf(tour_id)
 
-    previous_text = f"Название тура: {result['tour_name']}\n" \
-                    f"Дата: {result['tour_date']}\n" \
-                    f"Максимальное кол-во людей: {result['tour_max']}"
+    previous_text = f"Название тура: {result['name']}\n" \
+                    f"Дата: {result['date']}\n" \
+                    f"Максимальное кол-во людей: {result['count_max']}"
 
-    if result['tour_status'] != 'active':
+    if result['status'] != 'active':
         await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=previous_text,
                                     reply_markup=inline_kb_menu.after_lock_tour(tour_id))
     else:
@@ -151,27 +156,30 @@ async def change_count(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda query: query.data.startswith('kount_'))
 async def change_count_admin(callback_query: types.CallbackQuery):
-
     action = callback_query.data.split('_')[1]
-    count = int(callback_query.data.split('_')[3])
     app_id = int(callback_query.data.split('_')[2])
-    tour_max = int(callback_query.data.split('_')[4])
+    tour_id = int(callback_query.data.split('/')[1])
 
+    app_info = await application_info(app_id)
+    tour = await tour_inf(tour_id)
+
+    user_count = app_info["client_count"]
+    total_count = await tour_client_total_count(tour_id)
+    count_max = tour["count_max"]
 
     if action == '-':
-        if count <= 0:
-            count = 0
-        else:
-            count = count - 1
+        user_count = 0 if user_count <= 1 else user_count - 1
 
     elif action == '+':
-        if count < tour_max:
-            count += 1
+        if total_count < count_max:
+            user_count += 1
 
-    await update_count(count, app_id)
+    await update_count(user_count, app_id)
 
-
-    await list_clients(callback_query)
+    try:
+        await list_clients(callback_query)
+    except:
+        pass
 
 
 @dp.callback_query_handler(lambda query: query.data.startswith('apply'))
@@ -197,7 +205,7 @@ async def lock_tour(callback: types.CallbackQuery):
     res = await tour_inf(tour_id)
 
     await lock_tour_in_db(int(tour_id))
-    await callback.answer(text=f'{res["tour_name"]} {res["tour_date"]}\nТур закрыт', show_alert=True)
+    await callback.answer(text=f'{res["name"]} {res["date"]}\nТур закрыт', show_alert=True)
     await bot.edit_message_reply_markup(chat_id, message_id, reply_markup=inline_kb_menu.after_lock_tour(tour_id))
 
 
@@ -208,16 +216,16 @@ async def list_clients(callback: types.CallbackQuery):
     apps = await all_tour_clients(tour_id)
     tour = await tour_inf(tour_id)
 
-    desc = f"Информация о туре:\nНазвание: {tour['tour_name']}\nДата: {tour['tour_date']}\n"
+    desc = f"Информация о туре:\nНазвание: {tour['name']}\nДата: {tour['date']}\n"
     cc = 0
     for app in apps:
-        desc += f"\n{app['executor']} - {app['client_count']}"
+        desc += f"\n{app['user_name']} - {app['client_count']}"
         cc += app['client_count']
 
     if len(apps) > 0:
         desc += f"\n\nВсего клиентов: {cc}\n"
     else:
-        desc += f"\n\nКлиентов нету\n"
+        desc += f"\n\nКлиентов нет\n"
 
-    markup = admin_edit(apps, tour_id, tour["tour_max"])
+    markup = admin_edit(apps, tour_id)
     await edit_call(callback, desc, markup)

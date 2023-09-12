@@ -1,16 +1,7 @@
 import os
 
-from dotenv import load_dotenv
+BOT_TOKEN = "1672438859:AAEVf_aKog8XvhYrERzcXdQ7WljolArQ7sc"
 
-load_dotenv()
-
-#BOT_TOKEN = str(os.getenv(("BOT_TOKEN")))
-BOT_TOKEN = "6253941211:AAGmn8ndJnZVzWewsKsA8B-Sr73D4d--zQ0"
-
-admins_id = [
-    5844616297
-]
-
-chatAdminTours = '-957615428'
+chatAdminTours = '-1001696275512'
 
 activeStatus = ["user", "super"]
