@@ -50,8 +50,8 @@ async def tours_in_date(date):  # Выводит туры в кнопки по �
     async with dp['db_pool'].acquire() as connection:
         async with connection.transaction():
             results = await connection.fetch(
-                'SELECT * FROM "tours" WHERE status=$1 ORDER BY date',
-                'active')
+                'SELECT * FROM "tours" WHERE status=$1 and date=$2 ORDER BY date',
+                'active', date.strftime('%Y-%m-%d'))
             # print(results)
 
             markup = InlineKeyboardMarkup(row_width=1)
