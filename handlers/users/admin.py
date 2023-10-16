@@ -9,8 +9,9 @@ from filters import IsAdmin
 
 @dp.message_handler(IsAdmin(), text='/admin')
 async def adminPanel(message: types.Message):
-    await message.answer(f'{message.from_user.full_name},  за работу!',
-                         reply_markup=inline_kb_menu.admin)
+    if message.chat.id == message.from_user.id:
+        await message.answer(f'{message.from_user.full_name},  за работу!',
+                             reply_markup=inline_kb_menu.admin)
 
 
 @dp.callback_query_handler(text='back_to_admin')
