@@ -29,9 +29,13 @@ async def status():
 async def active_tour_list():
     async with dp['db_pool'].acquire() as connection:
         async with connection.transaction():
-            results = await connection.fetch(
-                'SELECT DISTINCT ON (date) * FROM "tours" WHERE status = $1', 'active')
-            # print(results)
+            query = """
+             SELECT DISTINCT ON (DATE_TRUNC('day', date)) *
+             FROM "tours"
+             WHERE status = $1;
+             """
+            results = await connection.fetch(query, 'active')
+
             if results:
                 markup = InlineKeyboardMarkup(row_width=1)
                 btns = []
